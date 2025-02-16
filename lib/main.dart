@@ -70,8 +70,8 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Timer(Duration(seconds: 3), () {
-      Navigator.pushReplacementNamed(context, "/home");  // Aquí pones tu ruta
+    Timer(Duration(seconds: 1), () {
+      Navigator.pushReplacementNamed(context, "/home");
     });
   }
 
@@ -118,11 +118,10 @@ class _MyAppState extends State<MyApp> {
               onPageFinished: (String url) {
                 _controller.runJavaScript("""
                   const observer = new MutationObserver(mutations => {
-                    let btn = document.querySelector("button[aria-label="menu"]");
+                    let btn = document.querySelector('button[aria-label="menu"]');
                     if (btn) {
                       btn.style.display = "none";
-                      console.log("Botón ocultado");
-                      observer.disconnect(); // Detener la observación
+                      observer.disconnect();
                     }
                   });
 
