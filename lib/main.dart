@@ -1,98 +1,14 @@
-import "package:flutter/material.dart";
-import "package:flutter_svg/svg.dart";
-import "package:webview_flutter/webview_flutter.dart";
-import "dart:async";
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'dart:async';
+import 'package:flutter_overlay_window/flutter_overlay_window.dart';
+import 'package:dynamic_color/dynamic_color.dart';
+import 'package:material_color_utilities/material_color_utilities.dart';
+
 void main() {
   runApp(MyApp());
-}
-
-class WebViewWithOverlay extends StatefulWidget {
-  const WebViewWithOverlay({super.key});
-
-  @override
-  // ignore: library_private_types_in_public_api
-  _WebViewWithOverlayState createState() => _WebViewWithOverlayState();
-}
-
-class _WebViewWithOverlayState extends State<WebViewWithOverlay> {
-  late WebViewController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    // No es necesario configurar SurfaceAndroidWebView en la nueva versión
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('WebView with Overlay'),
-      ),
-      body: Stack(
-        children: [
-          WebViewWidget(controller: _controller),  // Usamos WebViewWidget con el controlador
-          // Overlay con un menú flotante
-          Positioned(
-            top: 50,
-            right: 10,
-            child: GestureDetector(
-              onTap: () {
-                // Mostrar el menú al hacer clic en el ícono
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text('Menu'),
-                      content: Text('Aquí puedes añadir funciones extra'),
-                    );
-                  },
-                );
-              },
-              child: Icon(Icons.menu, size: 40, color: Colors.black),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
-
-  @override
-  // ignore: library_private_types_in_public_api
-  _SplashScreenState createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    Timer(Duration(seconds: 1), () {
-      Navigator.pushReplacementNamed(context, "/home");
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
-        child: AnimatedOpacity(
-          opacity: 1.0,
-          duration: Duration(seconds: 1),
-          child: SvgPicture.asset(
-            "assets/csplus.png",
-            width: 100,
-            height: 100,
-            color: Colors.primaries.first,
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class MyApp extends StatefulWidget {
@@ -108,38 +24,99 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    _controller =
-        WebViewController()
-          ..setJavaScriptMode(
-            JavaScriptMode.unrestricted,
-          ) // Habilitar JavaScript
-          ..setNavigationDelegate(
-            NavigationDelegate(
-              onPageFinished: (String url) {
-                _controller.runJavaScript("""
-                  const observer = new MutationObserver(mutations => {
-                    let btn = document.querySelector('button[aria-label="menu"]');
-                    if (btn) {
-                      btn.style.display = "none";
-                      observer.disconnect();
-                    }
-                  });
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageFinished: (String url) {
+            _controller.runJavaScript("""
+              const observer = new MutationObserver(mutations => {
+                let btn = document.querySelector('button[aria-label="menu"]');
+                if (btn) {
+                  btn.style.display = "none";
+                  observer.disconnect();
+                }
+              });
 
-                  observer.observe(document.body, { childList: true, subtree: true });
-                """);
-              },
-            ),
-          )
-          ..loadRequest(
-            Uri.parse("https://play.games.dmm.co.jp/game/cravesagax"),
-          );
+              observer.observe(document.body, { childList: true, subtree: true });
+            """);
+          },
+        ),
+      )
+      ..loadRequest(Uri.parse("https://play.games.dmm.co.jp/game/cravesagax"));
+
+    // Ocultar la barra de notificaciones y la barra de gestos inferior
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  }
+
+  void _openOverlay() async {
+    await FlutterOverlayWindow.showOverlay(
+      height: 200,
+      width: 300,
+      enableDrag: true,
+      overlayTitle: "Menu",
+      overlayContent: "Opciones del menú",
+    );
+    
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(body: WebViewWidget(controller: _controller)),
+    return DynamicColorBuilder(
+      builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
+        ColorScheme lightColorScheme;
+        ColorScheme darkColorScheme;  
+
+        Future<void> _loadDynamicColors() async {
+          CorePalette? corePalette = await DynamicColorPlugin.getCorePalette();
+          if (corePalette != null) {
+            setState(() {
+              lightColorScheme = corePalette.toColorScheme();
+              darkColorScheme = corePalette.toColorScheme(brightness: Brightness.dark);
+            });
+          }
+        }
+        _loadDynamicColors();        
+
+        if (lightDynamic != null && darkDynamic != null) {
+          lightColorScheme = lightDynamic.harmonized();
+          darkColorScheme = darkDynamic.harmonized();
+        } else {
+          lightColorScheme = ColorScheme.fromSwatch(primarySwatch: Colors.blue);
+          darkColorScheme = ColorScheme.fromSwatch(
+            primarySwatch: Colors.blue,
+            brightness: Brightness.dark,
+          );
+        }
+
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            colorScheme: lightColorScheme,
+            useMaterial3: true,
+          ),
+          darkTheme: ThemeData(
+            colorScheme: darkColorScheme,
+            useMaterial3: true,
+          ),
+          home: Scaffold(
+            body: Stack(
+              children: [
+                WebViewWidget(controller: _controller),
+                Positioned(
+                  top: 1,
+                  right: 1,
+                  child: FloatingActionButton(
+                    onPressed: _openOverlay,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    child: Icon(Icons.settings, color: Theme.of(context).colorScheme.secondary),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
