@@ -41,7 +41,9 @@ dependencies:
   dynamic_color: ^1.7.0
   flutter_test_utils: ^1.0.2
   flutter_floaty: ^0.2.0
-  #dash_bubble: ^2.0.0
+  fluttertoast: ^8.2.12
+  shake: ^3.0.0
+
 
 dev_dependencies:
   flutter_test:
