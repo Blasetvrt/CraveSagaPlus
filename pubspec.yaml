@@ -44,7 +44,6 @@ dependencies:
   fluttertoast: ^8.2.12
   shake: ^3.0.0
 
-
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -3,9 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 import 'package:dynamic_color/dynamic_color.dart';
-import 'package:flutter_floaty/flutter_floaty.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:shake/shake.dart';
+import 'widgets/floaty/floaty_button.dart';
+import 'widgets/floaty/delete_area.dart';
+import 'widgets/menu/language_menu.dart';
+import 'widgets/menu/main_menu.dart';
+import 'dictionary/dictionary.dart';
 
 void main() {
   runApp(const MyApp());
@@ -23,6 +27,14 @@ class _MyAppState extends State<MyApp> {
   bool _isDragging = false;
   bool _isButtonVisible = true;
   Offset _currentPosition = Offset.zero;
+  double _deleteAreaScale = 1.0;
+  double _deletePadding = 10;
+  Color _deleteIconColor = Colors.white;
+  bool _isMenuOpen = false;
+  String _currentLanguage = 'English';
+  bool _showingLanguageMenu = false;
+  bool _isDarkMode = false;
+  bool _isDynamicColor = true;
 
   // Shake detector for floaty displaying
   late ShakeDetector shake;
@@ -65,31 +77,71 @@ class _MyAppState extends State<MyApp> {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
 
-
-  // Floaty delete area
-  Widget _buildDeleteArea(ColorScheme colorScheme) {
-    return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
-      child: Container(
-        height: 100,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.transparent,
-              colorScheme.error.withValues(alpha: 0.3),
-            ],
-          ),
-        ),
-        child: Center(
-          child: Icon(
-            Icons.delete_outline,
-            color: colorScheme.error,
-            size: 40,
-          ),
+  void _showMenu(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () async {
+                  if (_showingLanguageMenu) {
+                    Navigator.pop(context);
+                    await Future.delayed(const Duration(milliseconds: 140));
+                    setDialogState(() => _showingLanguageMenu = false);
+                  } else {
+                    Navigator.pop(context);
+                  }
+                },
+              ),
+            ),
+            Dialog(
+              backgroundColor: Colors.transparent,
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: _showingLanguageMenu 
+                  ? LanguageMenu(
+                      currentLanguage: _currentLanguage,
+                      onLanguageChanged: (language) {
+                        setState(() => _currentLanguage = language);
+                      },
+                      onBack: () {
+                        setDialogState(() => _showingLanguageMenu = false);
+                      },
+                    )
+                  : MainMenu(
+                      currentLanguage: _currentLanguage,
+                      isDarkMode: _isDarkMode,
+                      isDynamicColor: _isDynamicColor,
+                      onLanguageTap: () async {
+                        await Future.delayed(const Duration(milliseconds: 100));
+                        setDialogState(() => _showingLanguageMenu = true);
+                      },
+                      onSettingsTap: () {
+                        Navigator.pop(context);
+                        // TODO: Implement settings
+                      },
+                      onAboutTap: () {
+                        Navigator.pop(context);
+                        // TODO: Implement about
+                      },
+                      onThemeChanged: (isDark) {
+                        setState(() => _isDarkMode = isDark);
+                      },
+                      onDynamicColorChanged: (isDynamic) {
+                        setState(() => _isDynamicColor = isDynamic);
+                      },
+                    ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -102,31 +154,29 @@ class _MyAppState extends State<MyApp> {
   static final _defaultDarkColorScheme =
       ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.dark);
 
-  // Main floaty component
   @override
   Widget build(BuildContext context) {
     return DynamicColorBuilder(
       builder: (lightColorScheme, darkColorScheme) {
-        final lightScheme = lightColorScheme ?? _defaultLightColorScheme;
-        final darkScheme = darkColorScheme ?? _defaultDarkColorScheme;
+        final lightScheme = _isDynamicColor ? (lightColorScheme ?? _defaultLightColorScheme) : _defaultLightColorScheme;
+        final darkScheme = _isDynamicColor ? (darkColorScheme ?? _defaultDarkColorScheme) : _defaultDarkColorScheme;
 
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           theme: ThemeData(
-            colorScheme: lightScheme,
-            useMaterial3: true,
-            primaryColor: lightScheme.primary,
-            brightness: Brightness.light,
-          ),
-          darkTheme: ThemeData(
             colorScheme: darkScheme,
             useMaterial3: true,
             primaryColor: darkScheme.primary,
             brightness: Brightness.dark,
           ),
-          themeMode: ThemeMode.system,
+          darkTheme: ThemeData(
+            colorScheme: lightScheme,
+            useMaterial3: true,
+            primaryColor: lightScheme.primary,
+            brightness: Brightness.light,
+          ),
+          themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
           home: FutureBuilder(
-            // Delay for dynamic scheme loading
             future: Future.delayed(const Duration(milliseconds: 500)),
             builder: (context, snapshot) {
               final colorScheme = Theme.of(context).colorScheme;
@@ -141,9 +191,19 @@ class _MyAppState extends State<MyApp> {
                     return Stack(
                       children: [
                         WebViewWidget(controller: _controller),
-                        Visibility(
-                          visible: _isDragging,
-                          child: _buildDeleteArea(colorScheme),
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: AnimatedOpacity(
+                            opacity: _isDragging ? 1.0 : 0.0,
+                            duration: const Duration(milliseconds: 200),
+                            child: DeleteArea(
+                              scale: _deleteAreaScale,
+                              padding: _deletePadding,
+                              iconColor: _deleteIconColor,
+                            ),
+                          ),
                         ),
                         if (snapshot.connectionState == ConnectionState.done)
                           Visibility(
@@ -151,24 +211,13 @@ class _MyAppState extends State<MyApp> {
                             child: Positioned(
                               top: height * 0.25,
                               right: 10,
-                              child: FlutterFloaty(
-                                intrinsicBoundaries: boundaries,
-                                width: buttonSize,
-                                height: buttonSize,
+                              child: FloatyButton(
+                                colorScheme: colorScheme,
+                                boundaries: boundaries,
+                                buttonSize: buttonSize,
                                 initialX: width - buttonSize - 10,
                                 initialY: height * 0.25,
-                                builder: (context) => Icon(
-                                  Icons.settings,
-                                  color: colorScheme.onSecondaryContainer,
-                                  size: 35,
-                                ),
-                                shadow: const BoxShadow(
-                                  color: Colors.black26,
-                                  blurRadius: 10,
-                                  offset: Offset(0, 2),
-                                ),
-                                backgroundColor: colorScheme.primary,
-                                onDragBackgroundColor: colorScheme.primary.withValues(alpha: 0.3),
+                                onMenuTap: () => _showMenu(context),
                                 onDragStart: (details) {
                                   setState(() {
                                     _isDragging = true;
@@ -176,15 +225,28 @@ class _MyAppState extends State<MyApp> {
                                 },
                                 onDragUpdate: (details) {
                                   _currentPosition = details.globalPosition;
+
+                                  if (_currentPosition.dy > height - 100 && ((_currentPosition.dx > width / 3) && (_currentPosition.dx < width * 2/3)) ) {
+                                    setState(() {
+                                      _deleteAreaScale = 1.4;
+                                      _deletePadding = 20;
+                                      _deleteIconColor = Colors.red;
+                                    });
+                                  } else {
+                                    setState(() {
+                                      _deleteAreaScale = 1.0;
+                                      _deletePadding = 10;
+                                      _deleteIconColor = Colors.white;
+                                    });
+                                  }
                                 },
                                 onDragEnd: (details) {
                                   setState(() {
                                     _isDragging = false;
-                                    // Check if the button is within the delete area (bottom 100 pixels)
-                                    if (_currentPosition.dy > height - 100) {
+                                    if (_currentPosition.dy > height - 100 && ((_currentPosition.dx > width / 3) && (_currentPosition.dx < width * 2/3)) ) {
                                       _isButtonVisible = false;
                                       Fluttertoast.showToast(
-                                        msg: "Floaty hidden. Shake your *other* hand to make it reappear ;)",
+                                        msg: Dictionary.t(_currentLanguage, 'floaty_hidden'),
                                         toastLength: Toast.LENGTH_SHORT,
                                         gravity: ToastGravity.BOTTOM,
                                         timeInSecForIosWeb: 1,
@@ -194,8 +256,6 @@ class _MyAppState extends State<MyApp> {
                                     }
                                   });
                                 },
-                                borderRadius: 25,
-                                growingFactor: 1.0,
                               ),
                             ),
                           ),
