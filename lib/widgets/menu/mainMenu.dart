@@ -3,24 +3,29 @@ import '../../dictionary/dictionary.dart';
 
 class MainMenu extends StatelessWidget {
   final String currentLanguage;
-  final bool isDarkMode;
+  final int themeMode;
   final bool isDynamicColor;
+  final bool isTranslationEnabled;
   final VoidCallback onLanguageTap;
   final VoidCallback onSettingsTap;
   final VoidCallback onAboutTap;
-  final Function(bool) onThemeChanged;
+  final Function(int) onThemeChanged;
   final Function(bool) onDynamicColorChanged;
+  final Function(bool) onTranslationChanged;
 
+  // Main settings menu
   const MainMenu({
     super.key,
     required this.currentLanguage,
-    required this.isDarkMode,
+    required this.themeMode,
     required this.isDynamicColor,
+    required this.isTranslationEnabled,
     required this.onLanguageTap,
     required this.onSettingsTap,
     required this.onAboutTap,
     required this.onThemeChanged,
     required this.onDynamicColorChanged,
+    required this.onTranslationChanged,
   });
 
   @override
@@ -33,10 +38,15 @@ class MainMenu extends StatelessWidget {
           children: [
             IconButton(
               icon: Icon(
-                isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                themeMode == 0 ? Icons.light_mode : 
+                themeMode == 1 ? Icons.dark_mode : 
+                Icons.brightness_auto,
                 color: Theme.of(context).colorScheme.primary,
               ),
-              onPressed: () => onThemeChanged(!isDarkMode),
+              onPressed: () {
+                // Cycle through theme modes: System -> Light -> Dark -> System
+                onThemeChanged((themeMode + 1) % 3);
+              },
             ),
             IconButton(
               icon: Icon(
@@ -46,6 +56,18 @@ class MainMenu extends StatelessWidget {
               onPressed: () => onDynamicColorChanged(!isDynamicColor),
             ),
           ],
+        ),
+        ListTile(
+          leading: Icon(Icons.translate, color: Theme.of(context).colorScheme.primary),
+          title: Text(Dictionary.t(currentLanguage, 'translate')),
+          trailing: currentLanguage == '日本語' ? null : SizedBox(
+            width: 48,
+            child: Switch(
+              value: isTranslationEnabled,
+              onChanged: onTranslationChanged,
+            ),
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16),
         ),
         _buildMenuItem(
           context,

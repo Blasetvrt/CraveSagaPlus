@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../dictionary/dictionary.dart';
 
+// Lamguage menu widget
 class LanguageMenu extends StatelessWidget {
   final String currentLanguage;
   final Function(String) onLanguageChanged;

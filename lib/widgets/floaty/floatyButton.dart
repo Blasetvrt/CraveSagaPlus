@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_floaty/flutter_floaty.dart';
 
+// Main floaty component
 class FloatyButton extends StatelessWidget {
   final ColorScheme colorScheme;
   final Rect boundaries;
@@ -56,12 +57,68 @@ class FloatyButton extends StatelessWidget {
         offset: Offset(0, 2),
       ),
       backgroundColor: colorScheme.primary,
-      onDragBackgroundColor: colorScheme.primary.withOpacity(0.3),
+      onDragBackgroundColor: colorScheme.primary.withValues(alpha: 0.3),
       onDragStart: onDragStart,
       onDragUpdate: onDragUpdate,
       onDragEnd: onDragEnd,
       borderRadius: 25,
       growingFactor: 1.0,
+    );
+  }
+} 
+
+// Delete area for floaty
+class DeleteArea extends StatelessWidget {
+  final double scale;
+  final double padding;
+  final Color iconColor;
+
+  const DeleteArea({
+    super.key,
+    required this.scale,
+    required this.padding,
+    required this.iconColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 200),
+        scale: scale,
+        child: Container(
+          height: 110,
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              center: Alignment.bottomCenter,
+              radius: 1.0,
+              colors: [
+                Colors.red,
+                Colors.red.withAlpha(0),
+              ],
+            ),
+          ),
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: AnimatedPadding(
+              duration: const Duration(milliseconds: 200),
+              padding: EdgeInsets.only(bottom: padding),
+              child: AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 200),
+                style: TextStyle(color: iconColor),
+                child: Icon(
+                  Icons.delete_outline,
+                  color: iconColor,
+                  size: 40,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 } 
