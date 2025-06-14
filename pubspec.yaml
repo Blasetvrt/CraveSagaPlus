@@ -1,5 +1,5 @@
 name: crave_saga_plus
-description: "A new Flutter project."
+description: "A webview wrapper for Crave Saga with tweaks"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -40,6 +40,7 @@ dependencies:
   flutter_overlay_window: ^0.4.5
   dynamic_color: ^1.7.0
   flutter_test_utils: ^1.0.2
+  flutter_floaty: ^0.2.0
   #dash_bubble: ^2.0.0
 
 dev_dependencies:

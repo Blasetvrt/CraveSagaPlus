@@ -1,16 +1,63 @@
-# crave_saga_plus
 
-A new Flutter project.
+<h1 align="center">  
+ CraveSagaPlus
+</h1>
 
-## Getting Started
+  <p align="center">  
+    <img src="android/app/src/main/res/mipmap-xxxhdpi/csplus.png" width="35%"/>
+  </p>
 
-This project is a starting point for a Flutter application.
+<h3 align="center"> 
+  A Flutter web application wrapper for Crave Saga with some tweaks.
+</h3>
 
-A few resources to get you started if this is your first Flutter project:
+  
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Features
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+  
+
+- [x] Gets rid of the annoying useless hentai floating button
+
+- [x] Adds an attractive useful floating button
+
+- [ ] Adds the possibility to override script files
+
+- [ ] Allows for automatic script translation and overriding
+
+- [ ] Extra future functionality
+
+  
+  
+  
+  
+
+## Dependencies
+
+  
+
+
+- [Webview Flutter](https://pub.dev/packages/webview_flutter)
+
+  
+
+- [Dynamic Colors](https://pub.dev/packages/dynamic_color)
+
+  
+
+- [Flutter Floaty](https://pub.dev/packages/flutter_floaty)
+  
+
+## Contributing
+
+  
+
+Feel free to fork and open any pull requests!
+
+  
+
+## License
+
+  
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
