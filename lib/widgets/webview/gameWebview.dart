@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'dart:io';
+import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
+import 'package:translator/translator.dart';
 
 // Webview Component
 class GameWebView extends StatefulWidget {
@@ -19,6 +23,33 @@ class _GameWebViewState extends State<GameWebView> {
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  }
+
+  Future<void> loadFileContent(String filePath) async {
+    try {
+      final file = File(filePath);
+      if (await file.exists()) {
+        final content = await file.readAsString();
+        final appDir = await getExternalStorageDirectory();
+                if (appDir == null) {
+                  print('Error: External storage directory is not available');
+                  return Future.value(null);
+                }
+        final baseUrl = WebUri('file://${appDir.path}/scripts/');
+        
+        await webViewController?.loadData(
+          data: content,
+          mimeType: 'text/html',
+          encoding: 'utf8',
+          baseUrl: baseUrl,
+          historyUrl: baseUrl,
+        );
+      } else {
+        print('File does not exist: $filePath');
+      }
+    } catch (e) {
+      print('Error loading file: $e');
+    }
   }
 
   @override
@@ -55,16 +86,82 @@ class _GameWebViewState extends State<GameWebView> {
             onWebViewCreated: (controller) {
               webViewController = controller;
             },
-            /*shouldOverrideUrlLoading: (controller, navigationAction) {
-              
-            },*/
+            shouldOverrideUrlLoading: (controller, navigationAction) async {
+              final url = navigationAction.request.url?.rawValue.toString() ?? '';
+              if (url.endsWith('.txt')) {
+                final fileName = path.basename(url);
+                final appDir = await getExternalStorageDirectory();
+                if (appDir == null) {
+                  print('Error: External storage directory is not available');
+                  return NavigationActionPolicy.ALLOW;
+                }
+                
+                final targetFile = File('${appDir.path}/scripts/origin_jp/$fileName');
+                if (await targetFile.exists()) {
+                  try {
+                    final content = await targetFile.readAsString();
+                    final baseUrl = WebUri('file://${appDir.path}/scripts/prueba');
+                    await controller.loadData(
+                      data: content,
+                      mimeType: 'text/html',
+                      encoding: 'utf8',
+                      baseUrl: baseUrl,
+                      historyUrl: baseUrl,
+                    );
+                    return NavigationActionPolicy.CANCEL;
+                  } catch (e) {
+                    print('Error loading local file: $e');
+                  }
+                }
+              }
+              return NavigationActionPolicy.ALLOW;
+            },
             // URL interceptor
-            shouldInterceptRequest: (controller, request) {
+            shouldInterceptRequest: (controller, request) async {
               print(request.url);
               final url = request.url.rawValue.toString();
               print(url);
-              if (url.endsWith(".txt")) {
+              if (url.startsWith("https://gg-resource.crave-saga.net/1.0.0/") && url.endsWith(".txt")) {
                 print(request.url);
+                final fileName = path.basename(url);
+                // Skip synopsis fules
+                if (fileName.toLowerCase().contains('synopsis')) {
+                  print('Skipping synopsis file: $fileName');
+                  return Future.value(null);
+                }
+                final appDir = await getExternalStorageDirectory();
+                if (appDir == null) {
+                  print('Error: External storage directory is not available');
+                  return Future.value(null);
+                }
+                final targetDir = Directory('${appDir.path}/scripts/origin_jp');
+                final targetFile = File('${targetDir.path}/$fileName');
+                
+                try {
+                  try {
+                    await targetDir.create(recursive: true);
+                  } catch (e) {
+                    // Directory might already exist, which is fine
+                    print('Directory might already exist: $e');
+                  }
+                  
+                  try {
+                    final httpClient = HttpClient();
+                    final httpRequest = await httpClient.getUrl(Uri.parse(url));
+                    final httpResponse = await httpRequest.close();
+                    final bytes = await httpResponse.fold<List<int>>(
+                      <int>[],
+                      (previous, element) => previous..addAll(element),
+                    );
+                    
+                    await targetFile.writeAsBytes(bytes);
+                    print('Saved file: ${targetFile.path}');
+                  } catch (e) {
+                    print('Error downloading or saving file: $e');
+                  }
+                } catch (e) {
+                  print('Error in file operations: $e');
+                }
               }
               return Future.value(null);
             },

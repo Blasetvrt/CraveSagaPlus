@@ -45,6 +45,8 @@ dependencies:
   shared_preferences: ^2.2.2
   translator: ^1.0.3+1
   flutter_inappwebview: ^6.1.5
+  path_provider: ^2.1.2
+  permission_handler: ^11.3.0
 
   
 dev_dependencies:

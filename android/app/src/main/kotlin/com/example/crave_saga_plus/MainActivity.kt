@@ -1,4 +1,4 @@
-package com.example.crave_saga_plus
+package com.blasetvrt.csplus
 
 import io.flutter.embedding.android.FlutterActivity
 
